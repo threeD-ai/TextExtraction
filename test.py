@@ -1,8 +1,17 @@
+# -*- coding: utf-8 -*-
 import argparse
 
 import file_utils
 import ocr
 
+
+"""
+This is the main function which does following tasks in following order:
+1. Makes (and cleans) directory in accordance with the file structure
+2. Converts all the pdfs to images (and copies the content of input folder)
+3. Runs OCR (detection+recognition) over the entire image folder and saves the result in 'ocr_result_folder'
+4.
+"""
 def main(args):
 
     #make or clean the corresponding folders
@@ -64,5 +73,4 @@ if __name__ == '__main__':
     parser.add_argument('--recognize', default=False, action='store_true', help='flag to enable recognition')
 
     args = parser.parse_args()
-
     main(args)
