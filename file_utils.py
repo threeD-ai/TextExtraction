@@ -27,7 +27,7 @@ def make_clean_folder(path):
 
 def convert_pdf(input_folder, image_folder, name, pdfpath):
     counter = 0
-    if platform.system== 'Windows':
+    if platform.system() == 'Windows':
         pages = convert_from_path(input_folder + pdfpath, 300, poppler_path=r'./packages/poppler-0.68.0/bin')
     else:
         pages = convert_from_path(input_folder + pdfpath, 300)
