@@ -26,6 +26,10 @@ def normalizeMeanVariance(in_img, mean=(0.485, 0.456, 0.406), variance=(0.229, 0
     return img
 
 def cvt2HeatmapImg(img):
+    """
+    create heatmap from the greyscale image
+
+    """
     img = (np.clip(img, 0, 1) * 255).astype(np.uint8)
     img = cv2.applyColorMap(img, cv2.COLORMAP_JET)
     return img
@@ -35,10 +39,10 @@ def getDetBoxes(textmap, linkmap, text_threshold, link_threshold, low_text, x_di
     textmap = textmap.copy()
     img_h, img_w = textmap.shape
 
-    """ labeling method """
+    # perform thresholding on greyscale map of link_score
     ret, text_score = cv2.threshold(textmap, low_text, 1, 0)
 
-    # vertical kernel
+    # custom kernel defined to pad the textmap strictly in the upper left region of each blob
     center_x = int((x_dilate + 1) / 2)
     center_y = int((y_dilate + 1) / 2)
 
@@ -49,9 +53,10 @@ def getDetBoxes(textmap, linkmap, text_threshold, link_threshold, low_text, x_di
     final = np.append(outer_r, inner, 1)
     Vkernel = np.append(outer_d, final, 0)
 
+    # dilation is performed here
     text_score = cv2.dilate(text_score, Vkernel, 1)
 
-
+    # perform thresholding on greyscale map of link_score
     ret, link_score = cv2.threshold(linkmap, link_threshold, 1, 0)
     text_score_comb = np.clip(text_score + link_score, 0, 1)
     nLabels, labels, stats, centroids = cv2.connectedComponentsWithStats(text_score_comb.astype(np.uint8), connectivity=4)
@@ -101,24 +106,21 @@ def getDetBoxes(textmap, linkmap, text_threshold, link_threshold, low_text, x_di
             l, t, w, h = cv2.boundingRect(np_contours)
             box = np.array([l, t, l+w, t+h])
 
-        # make clock-wise order
-        # startidx = box.sum(axis=1).argmin()
-        # box = np.roll(box, 4-startidx, 0)
-        # box = np.array(box)
         det.append(box)
 
-    # New Approach
-    
-    # box_list = []
-    # Vcnts = cv2.findContours((text_score_comb*255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # Vcnts = Vcnts[0] if len(Vcnts) == 2 else Vcnts[1]
+    """ Simpler Approach """
+    # if not rotated_box:
+    #     box_list = []
+    #     text_score_comb = (np.clip(text_score_comb, 0, 1) * 255).astype(np.uint8)
+    #     Vcnts = cv2.findContours(text_score_comb, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #     Vcnts = Vcnts[0] if len(Vcnts) == 2 else Vcnts[1]
 
-    # for c in reversed(Vcnts):
-    #     l,t,w,h = cv2.boundingRect(c)
-    #     box_list.append(np.array([[l, t], [l+w, t], [l+w, t+h], [l, t+h]]))
+    #     for c in reversed(Vcnts):
+    #         l,t,w,h = cv2.boundingRect(c)
+    #         box_list.append(np.array([l, t, l+w, t+h]))
+    # return box_list
 
     return det
-    # return box_list
 
 def adjustResultCoordinates(boxes, ratio_w, ratio_h, rotated_box, ratio_net = 2):
     if len(boxes) > 0:
