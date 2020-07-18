@@ -4,7 +4,10 @@
 *.pth
 result*
 weights*
-data*
+input_folder*
+intermediary_folder*
+output_folder*
 packages*
 img*
+data*
 .ipynb_checkpoints
