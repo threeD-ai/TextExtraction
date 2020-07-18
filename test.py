@@ -26,7 +26,10 @@ from detector import Detector
 
 from collections import OrderedDict
 
+# self-identify which device(cpu/gpu) the code is currently running on.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# self-identify which operating system(Windows/Ubuntu) the code is currently running on.
 if platform.system() == 'Windows':
     TESSERACT_PATH = "./packages/Tesseract-OCR/tesseract.exe"
     pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
@@ -42,10 +45,11 @@ def copyStateDict(state_dict):
         new_state_dict[name] = v
     return new_state_dict
 
-def str2bool(v):
-    return v.lower() in ("yes", "y", "true", "t", "1")
-
-def test(args):
+"""
+This is the main function to detect bounding boxes and subsequently run tesseract over it. 
+It performs OCR.
+"""
+def extraction(args):
     t = time.time()
     result_folder = args.ocr_result_folder
     
@@ -70,20 +74,24 @@ def test(args):
         num_workers=int(args.workers),
         collate_fn=AlignCollate_demo, pin_memory=True)
 
+    # run network in evaluation mode
     net.eval()
 
     with torch.no_grad():
         for image_tensors, image_path_list, aspect_ratios in demo_loader:
             batch_size = image_tensors.size(0)
+
+            # send image tensors to device (cpu/gpu)
             if args.cpu:
                 image_tensors = image_tensors.to('cpu')
             else:
                 image_tensors = image_tensors.to(device)
 
+            # forward pass
             y, feature = net(image_tensors)
-
+            
+            # run the loop over each item in the batch
             for i in range(batch_size):
-
                 # make score and link map               
                 score_text = y[i,:,:,0].cpu().data.numpy()
                 score_link = y[i,:,:,1].cpu().data.numpy()
@@ -110,23 +118,31 @@ def test(args):
 
                 # render results (optional)
                 if args.render:
-                    render_img = score_text.copy()
-                    render_img = np.hstack((render_img, score_link))
-                    ret_score_text = process_utils.cvt2HeatmapImg(render_img)
 
+                    # Saving DETECTION results
+                    
+                    # Save Character Mask and Link Mask in one file
+                    render_img = np.hstack((score_text, score_link))
+                    ret_score_text = process_utils.cvt2HeatmapImg(render_img)
                     image_path = image_path_list[i]
                     filename, _ = os.path.splitext(os.path.basename(image_path))
                     mask_file = result_folder + "/res_" + filename + '_mask.jpg'
                     cv2.imwrite(mask_file, ret_score_text)
 
+                    # Save image with all the bounding boxes planted on it
                     image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
-                    file_utils.saveResult(image_path, img, boxes, dirname=result_folder)
+                    file_utils.saveResult(image_path, img, boxes, result_folder, args.rotated_box)
+
+                    # Saving RECOGNITION results
 
                     if args.recognize:
+
+                        # make temp folder to store all the cropped snippets (of the image) as jpeg file
                         temp_folder = result_folder + '/temp/'
                         file_utils.make_clean_folder(temp_folder)
 
+                        # excel file to store all the recognition results
                         excel_file = result_folder + "/" + filename + '_result.xlsx'
 
                         excelbook = xw.Workbook(excel_file)
@@ -145,6 +161,8 @@ def test(args):
                         excelsheet.write(0,4, 'Image', bold)
                         excelsheet.write(0,6, 'Ground_Truth', bold)
                         excelsheet.write(0,7, 'Label', bold)
+
+                        # loop over all the bounding boxes
                         i = 0
                         for box, text in data_tuples:
                             excelsheet.write(i+1,0,box[0])
@@ -154,14 +172,21 @@ def test(args):
                             excelsheet.write(i+1,5,text)
                             excelsheet.write(i+1,6,'---')
                             excelsheet.write(i+1,7,'###')
+
+                            #extract region of interest from the image
                             roi0 = img[box[1]:box[3], box[0]:box[2],:]
+
+                            #resize the image to fit it in excel grid
                             try:
                                 resized = process_utils.resize_height(roi0, 20)
                             except:
                                 resized = roi0 
+
+                            #saving image so that it can be inserted into excel sheet
                             cv2.imwrite(temp_folder +str(i+1) + '.jpg', resized)
                             excelsheet.insert_image(i+1, 4,(temp_folder +str(i+1) + '.jpg'), {'x_offset':3, 'y_offset':2, 'object_position':1})
                             i = i+1
+
                         excelbook.close()  
 
     print("elapsed time : {}s".format(time.time() - t))
@@ -227,8 +252,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    #make or clean the corresponding folders
     file_utils.make_clean_folder(args.image_folder)
     file_utils.make_clean_folder(args.ocr_result_folder)
-
+    
+    #convert all the pdfs into images and copy them along with other images into image folder
     file_utils.copy_and_convert(args.input_folder, args.image_folder)
-    test(args)
+
+    #run extraction on the entire folder
+    extraction(args)
