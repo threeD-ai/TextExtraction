@@ -132,7 +132,7 @@ def extraction(args):
                     # Save image with all the bounding boxes planted on it
                     image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
-                    file_utils.saveResult(image_path, img, boxes, dirname=result_folder)
+                    file_utils.saveResult(image_path, img, boxes, result_folder, args.rotated_box)
 
                     # Saving RECOGNITION results
 
