@@ -120,30 +120,34 @@ def extraction(args):
                 if args.render:
 
                     # Saving DETECTION results
-                    
+                    detection_folder = result_folder + '/detection/'
+                    if not os.path.exists(detection_folder):
+                        os.mkdir(detection_folder)
                     # Save Character Mask and Link Mask in one file
                     render_img = np.hstack((score_text, score_link))
                     ret_score_text = process_utils.cvt2HeatmapImg(render_img)
                     image_path = image_path_list[i]
                     filename, _ = os.path.splitext(os.path.basename(image_path))
-                    mask_file = result_folder + "/res_" + filename + '_mask.jpg'
+                    mask_file = detection_folder + filename + '_mask.jpg'
                     cv2.imwrite(mask_file, ret_score_text)
 
                     # Save image with all the bounding boxes planted on it
                     image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
-                    file_utils.saveResult(image_path, img, boxes, result_folder, args.rotated_box)
+                    file_utils.saveResult(image_path, img, boxes, detection_folder, args.rotated_box)
 
                     # Saving RECOGNITION results
 
                     if args.recognize:
-
+                        recognition_folder = result_folder + '/recognition/'
+                        if not os.path.exists(recognition_folder):
+                            os.mkdir(recognition_folder)
                         # make temp folder to store all the cropped snippets (of the image) as jpeg file
-                        temp_folder = result_folder + '/temp/'
+                        temp_folder = recognition_folder + '/temp/'
                         file_utils.make_clean_folder(temp_folder)
 
                         # excel file to store all the recognition results
-                        excel_file = result_folder + "/" + filename + '_result.xlsx'
+                        excel_file = recognition_folder + filename + '_result.xlsx'
 
                         excelbook = xw.Workbook(excel_file)
                         excelsheet = excelbook.add_worksheet('Sheet1')
