@@ -4,4 +4,7 @@
 *.pth
 result*
 weights*
+data*
+packages*
+img*
 .ipynb_checkpoints
