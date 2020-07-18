@@ -69,7 +69,6 @@ def test(args):
         num_workers=int(args.workers),
         collate_fn=AlignCollate_demo, pin_memory=True)
 
-    ocr_list = []
     net.eval()
 
     with torch.no_grad():
@@ -97,13 +96,16 @@ def test(args):
 
                 # Recognition Part
                 if args.recognize:
-                    image = process_utils.loadImage(image_path_list[i])
+                    image_path = image_path_list[i]
+                    filename, _ = os.path.splitext(os.path.basename(image_path))
+                    numpy_file = result_folder + "/" + filename + '.npy'
+                    image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
                     with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
                         config = ("-l eng --oem 1 --psm 6")
                         texts = list(executor.map(lambda box: pytesseract.image_to_string(img[box[1]:box[3], box[0]:box[2]], config=config), boxes))
                         data_tuples = list(zip(boxes, texts))
-                        ocr_list.append(data_tuples)
+                        np.save(numpy_file, np.array(data_tuples))
 
                 # render results (optional)
                 if args.render:
@@ -162,7 +164,6 @@ def test(args):
                         excelbook.close()  
 
     print("elapsed time : {}s".format(time.time() - t))
-    return ocr_list
 
 
 if __name__ == '__main__':
@@ -224,8 +225,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ocr_list = test(args)
-
-    print(ocr_list)
+    test(args)
 
     
