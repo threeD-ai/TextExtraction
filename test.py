@@ -107,7 +107,7 @@ def extraction(args):
                 if args.recognize:
                     image_path = image_path_list[i]
                     filename, _ = os.path.splitext(os.path.basename(image_path))
-                    numpy_file = result_folder + "/" + filename + '.npy'
+                    numpy_file = result_folder + filename + '.npy'
                     image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
                     with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
@@ -120,9 +120,8 @@ def extraction(args):
                 if args.render:
 
                     # Saving DETECTION results
-                    detection_folder = result_folder + '/detection/'
-                    if not os.path.exists(detection_folder):
-                        os.mkdir(detection_folder)
+                    detection_folder = args.detection_folder
+    
                     # Save Character Mask and Link Mask in one file
                     render_img = np.hstack((score_text, score_link))
                     ret_score_text = process_utils.cvt2HeatmapImg(render_img)
@@ -139,9 +138,8 @@ def extraction(args):
                     # Saving RECOGNITION results
 
                     if args.recognize:
-                        recognition_folder = result_folder + '/recognition/'
-                        if not os.path.exists(recognition_folder):
-                            os.mkdir(recognition_folder)
+                        recognition_folder = args.recognition_folder
+
                         # make temp folder to store all the cropped snippets (of the image) as jpeg file
                         temp_folder = recognition_folder + '/temp/'
                         file_utils.make_clean_folder(temp_folder)
@@ -199,12 +197,19 @@ def extraction(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Text Extraction')
 
-    """=================================== Part 1: DETECTION ==================================="""
+    """=================================== I/O Configuration ==================================="""
 
-    """ I/O Configuration """
-    parser.add_argument('--input_folder', default='data/', type=str, help='folder path to input files')
-    parser.add_argument('--image_folder', default='img/', type=str, help='folder path to input (converted) images')
-    parser.add_argument('--ocr_result_folder', default='result/', type=str, help='folder path to output results')
+    parser.add_argument('--input_folder', default='input_folder/', type=str, help='folder path to input files')
+    parser.add_argument('--intermediary_folder', default='intermediary_folder/', type=str, help='folder path to intermediary folders')
+    parser.add_argument('--image_folder', default='intermediary_folder/images/', type=str, help='folder path to converted images')
+    parser.add_argument('--detection_folder', default='intermediary_folder/detection/', type=str, help='folder path to detection results')
+    parser.add_argument('--recognition_folder', default='intermediary_folder/recognition/', type=str, help='folder path to recognition results')
+    parser.add_argument('--ocr_result_folder', default='intermediary_folder/ocr_result/', type=str, help='folder path to final ocr results (recognition+detection)')
+    
+    parser.add_argument('--output_folder', default='output_folder/', type=str, help='folder path to output files')
+ 
+
+    """=================================== Part 1: DETECTION ==================================="""
 
     """ Data PreProcessing """
     parser.add_argument('--canvas_size', default=1920, type=int, help='image size for inference')
@@ -257,9 +262,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #make or clean the corresponding folders
+    file_utils.make_clean_folder(args.intermediary_folder)
+    file_utils.make_clean_folder(args.detection_folder)
+    file_utils.make_clean_folder(args.recognition_folder)
     file_utils.make_clean_folder(args.image_folder)
     file_utils.make_clean_folder(args.ocr_result_folder)
-    
+    file_utils.make_clean_folder(args.output_folder)
+
     #convert all the pdfs into images and copy them along with other images into image folder
     file_utils.copy_and_convert(args.input_folder, args.image_folder)
 
