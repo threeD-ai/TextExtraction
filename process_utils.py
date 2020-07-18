@@ -5,7 +5,7 @@ import cv2
 import math
 
 def loadImage(img_file):
-    if img_file[-3:]=='.tif':
+    if img_file[-3:].lower()=='tif':
         image = cv2.imread(img_file)
         img = image[:,:,::-1]
     else:
