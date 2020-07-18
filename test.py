@@ -27,6 +27,8 @@ from detector import Detector
 from collections import OrderedDict
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+if platform.system() == 'Windows':
+    TESSERACT_PATH = "./packages/Tesseract-OCR/tesseract.exe"
 
 def copyStateDict(state_dict):
     if list(state_dict.keys())[0].startswith("module"):
@@ -45,8 +47,6 @@ def str2bool(v):
 def test(args):
     t = time.time()
     result_folder = args.ocr_result_folder
-    if not os.path.isdir(result_folder):
-        os.mkdir(result_folder)
     
     # load Detection network
     net = Detector()     # initialize
@@ -62,7 +62,7 @@ def test(args):
 
     # define dataset and dataloader
     AlignCollate_demo = AlignCollate(square_size = args.canvas_size, mag_ratio=args.mag_ratio)
-    demo_data = RawDataset(root=args.input_folder)
+    demo_data = RawDataset(root=args.image_folder)
     demo_loader = torch.utils.data.DataLoader(
         demo_data, batch_size=args.batch_size,
         shuffle=False,
@@ -172,7 +172,8 @@ if __name__ == '__main__':
     """=================================== Part 1: DETECTION ==================================="""
 
     """ I/O Configuration """
-    parser.add_argument('--input_folder', default='data/', type=str, help='folder path to input images')
+    parser.add_argument('--input_folder', default='data/', type=str, help='folder path to input files')
+    parser.add_argument('--image_folder', default='img/', type=str, help='folder path to input (converted) images')
     parser.add_argument('--ocr_result_folder', default='result/', type=str, help='folder path to output results')
 
     """ Data PreProcessing """
@@ -199,7 +200,7 @@ if __name__ == '__main__':
 
     """=================================== Part 2: RECOGNITION ==================================="""
 
-    parser.add_argument('--image_folder', default='data/', type=str, help='path to image_folder which contains text images')
+    # parser.add_argument('--image_folder', default='data/', type=str, help='path to image_folder which contains text images')
     parser.add_argument('--recognize', default=False, action='store_true', help='flag to enable recognition')
     # parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     # parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
@@ -225,6 +226,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    test(args)
-
+    file_utils.make_clean_folder(args.image_folder)
+    file_utils.make_clean_folder(args.ocr_result_folder)
     
+    file_utils.copy_and_convert(args.input_folder, args.image_folder)
+    test(args)

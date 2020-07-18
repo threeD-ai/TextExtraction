@@ -2,6 +2,9 @@
 import os
 import numpy as np
 import cv2
+from pdf2image import convert_from_path
+import platform
+import shutil
 
 # borrowed from https://github.com/lengstrom/fast-style-transfer/blob/master/src/utils.py
 def get_files(img_dir):
@@ -22,6 +25,28 @@ def make_clean_folder(path):
             except Exception as e:
                 print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+def convert_pdf(input_folder, image_folder, name, pdfpath):
+    counter = 0
+    if platform.system== 'Windows':
+        pages = convert_from_path(input_folder + pdfpath, 300, poppler_path=r'./packages/poppler-0.68.0/bin')
+    else:
+        pages = convert_from_path(input_folder + pdfpath, 300)
+    for page in pages:
+        counter = counter + 1
+        page.save(image_folder + name + "_%d.jpg" % (pages.index(page)), "JPEG")
+
+def copy_img(input_folder, image_folder, path):
+    _ = shutil.copyfile(input_folder + path, image_folder + path)
+
+def copy_and_convert(input_folder, image_folder):
+    for _, _, files in os.walk(input_folder):
+        for filename in files:
+            name, ext = os.path.splitext(filename)
+            if (ext.lower() == '.pdf'):
+                convert_pdf(input_folder, image_folder, name, filename)
+            elif (ext.lower() == '.jpg' or ext.lower() == '.png' or ext.lower() == '.jpeg' or ext.lower() == '.tif'):
+                copy_img(input_folder, image_folder, filename)
+
 def list_files(in_path):
     img_files = []
     mask_files = []
@@ -38,9 +63,6 @@ def list_files(in_path):
                 gt_files.append(os.path.join(dirpath, file))
             elif ext == '.zip':
                 continue
-    # img_files.sort()
-    # mask_files.sort()
-    # gt_files.sort()
     return img_files, mask_files, gt_files
 
 def saveResult(img_file, img, boxes, dirname='./result/', verticals=None, texts=None):
