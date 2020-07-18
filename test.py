@@ -29,6 +29,7 @@ from collections import OrderedDict
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if platform.system() == 'Windows':
     TESSERACT_PATH = "./packages/Tesseract-OCR/tesseract.exe"
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 def copyStateDict(state_dict):
     if list(state_dict.keys())[0].startswith("module"):
@@ -228,6 +229,6 @@ if __name__ == '__main__':
 
     file_utils.make_clean_folder(args.image_folder)
     file_utils.make_clean_folder(args.ocr_result_folder)
-    
+
     file_utils.copy_and_convert(args.input_folder, args.image_folder)
     test(args)
