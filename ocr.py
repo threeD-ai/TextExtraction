@@ -169,7 +169,7 @@ def extraction(args):
 
                         # loop over all the bounding boxes
                         i = 0
-                        for box, text in data_tuples:
+                        for box, text in zip(boxes,texts):
                             excelsheet.write(i+1,0,box[0])
                             excelsheet.write(i+1,1,box[1])
                             excelsheet.write(i+1,2,box[2])
