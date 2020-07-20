@@ -35,8 +35,8 @@ def convert_pdf(input_folder, image_folder, name, pdfpath):
         counter = counter + 1
         page.save(image_folder + name + "_%d.jpg" % (pages.index(page)), "JPEG")
 
-def copy_img(input_folder, image_folder, path):
-    _ = shutil.copyfile(input_folder + path, image_folder + path)
+def copy_img(input_folder, image_folder, name, ext, path):
+    _ = shutil.copyfile(input_folder + path, image_folder + name + '_0' + ext)
 
 def copy_and_convert(input_folder, image_folder):
     for _, _, files in os.walk(input_folder):
@@ -45,7 +45,7 @@ def copy_and_convert(input_folder, image_folder):
             if (ext.lower() == '.pdf'):
                 convert_pdf(input_folder, image_folder, name, filename)
             elif (ext.lower() == '.jpg' or ext.lower() == '.png' or ext.lower() == '.jpeg' or ext.lower() == '.tif'):
-                copy_img(input_folder, image_folder, filename)
+                copy_img(input_folder, image_folder, name, ext, filename)
 
 def list_files(in_path):
     img_files = []

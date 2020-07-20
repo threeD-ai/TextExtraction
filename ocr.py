@@ -6,6 +6,7 @@ import concurrent.futures
 import platform
 import shutil
 
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
@@ -107,14 +108,16 @@ def extraction(args):
                 if args.recognize:
                     image_path = image_path_list[i]
                     filename, _ = os.path.splitext(os.path.basename(image_path))
-                    numpy_file = result_folder + filename + '.npy'
+                    df_file = result_folder + filename + '.csv'
                     image = process_utils.loadImage(image_path)
                     img = image[:,:,::-1]
                     with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
                         config = ("-l eng --oem 1 --psm 6")
                         texts = list(executor.map(lambda box: pytesseract.image_to_string(img[box[1]:box[3], box[0]:box[2]], config=config), boxes))
-                        data_tuples = list(zip(boxes, texts))
-                        np.save(numpy_file, np.array(data_tuples))
+
+                        df_ocr = pd.DataFrame(boxes, columns = ['startX', 'startY', 'endX', 'endY'])
+                        df_ocr['Text'] = texts
+                        df_ocr.to_csv(df_file, index=False)
 
                 # render results (optional)
                 if args.render:
