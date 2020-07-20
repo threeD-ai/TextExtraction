@@ -89,7 +89,7 @@ def extraction(args):
                 image_tensors = image_tensors.to(device)
 
             # forward pass
-            y, feature = net(image_tensors)
+            y, _ = net(image_tensors)
             
             # run the loop over each item in the batch
             for i in range(batch_size):
