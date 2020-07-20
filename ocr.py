@@ -48,7 +48,7 @@ def copyStateDict(state_dict):
 
 """
 This is the main function to detect bounding boxes and subsequently run tesseract over it. 
-It performs OCR and saves the result in the intermediary_folder
+It performs OCR and saves the result in the intermediary_folder.
 """
 def extraction(args):
     t = time.time()
