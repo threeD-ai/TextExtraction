@@ -1,0 +1,11 @@
+*.pyc
+*.swp
+*.pkl
+*.pth
+result*
+weights*
+input_folder*
+intermediary_folder*
+output_folder*
+packages*
+.ipynb_checkpoints
